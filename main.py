@@ -1,7 +1,6 @@
-import random as rand
+
 from datetime import date
 import os
-import asyncio
 from aiogram.utils import executor
 from aiogram import Dispatcher, Bot, types
 from aiogram.types import MediaGroup,\
@@ -11,8 +10,8 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 LOGO = 'https://wampi.ru/image/YcEmt2w'
-TOKEN = '5973267086:AAE_HAGaVb1Dz-BbMNEwSAO-c5lRV6GonYI'
-CHANNEL_USERNAME = '-1001979154769'
+TOKEN = '6682887861:AAHn77xkWOY1RR5e_Qi-KKdlRc-TWcd5SQ4'
+CHANNEL_USERNAME = '-1001509233460'
 ADMIN_ID = '5254590818'
 bot = Bot(TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
@@ -77,6 +76,7 @@ class post_up(StatesGroup):
     waiting_for_description = State()
     waiting_for_photo = State()
     waiting_for_res = State()
+    one_proub = State()
 
 
 @dp.message_handler(commands='start', state='*')
@@ -114,6 +114,8 @@ async def descript(msg: types.Message, state: FSMContext):
             break
     if valid == True:
         global item_name
+        global user_id
+        user_id = msg.from_user.id
         item_name = msg.text
         await msg.answer(
             text='Отлично!А теперь назовите цену товара')
@@ -154,18 +156,20 @@ async def process_photo(msg: types.Message, state: FSMContext):
     photo_id = msg.photo[-1].file_id
     photoc = await bot.get_file(photo_id)
     await photoc.download(destination_file=f'{mkd_path}/{photo_id}.jpg')
-    await state.finish()
+    await state.set_state(post_up.one_proub.state)
+
 
 @dp.message_handler(commands='cancel', state='*')
 async def breaking(msg: types.Message, state: FSMContext):
     await msg.answer(text='Действие отменено')
     await state.finish()
 
-@dp.callback_query_handler(lambda r: r.data == 'norm')
-async def NORM(callback: types.CallbackQuery):
+@dp.callback_query_handler(lambda r: r.data == 'norm', state=post_up.one_proub)
+async def NORM(callback: types.CallbackQuery, state: FSMContext):
     global description
-    description = f'''{item_name}\nЦена: {item_price}\n{item_descript}\n Автор поста: @{user_name}'''
+    description = f'''{item_name}\nЦена: {item_price}\n{item_descript}\n@{user_name}'''
     await send_photos_to_admin(ADMIN_ID, mkd_path, description)
+    tate.finish()
 
 
 @dp.callback_query_handler(lambda a: a.data == 'nenorm')
@@ -197,12 +201,15 @@ async def handle_callback_query(callback_query: types.CallbackQuery):
     if callback_query.data == 'approve':
         await bot.send_message(callback_query.from_user.id, "Пост одобрен. Публикуем в канал...")
         await publish_to_channel(callback_query.from_user.id)
+        await bot.send_message(user_id, text="Пост одобрен")
         await remove_folder(callback_query.from_user.id)
     elif callback_query.data == 'cancel':
         # Отмена - удаляем папку
         await bot.send_message(callback_query.from_user.id, "Пост отклонен. Удаляем папку...")
+        await bot.send_message(user_id, text="Пост отклонён")
         await remove_folder(callback_query.from_user.id)
     await callback_query.answer()
+
 
 
 async def publish_to_channel(admin_id):
