@@ -10,9 +10,9 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 LOGO = 'https://wampi.ru/image/YcEmt2w'
-TOKEN = '6682887861:AAHn77xkWOY1RR5e_Qi-KKdlRc-TWcd5SQ4'
-CHANNEL_USERNAME = '-1001509233460'
-ADMIN_ID = '5254590818'
+TOKEN = os.environ["BOT_TOKEN"]
+CHANNEL_USERNAME = os.environ["CHANNEL_USERNAME"]
+ADMIN_ID = os.environ["ADMIN_ID"]
 bot = Bot(TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 FAQ_txt = '''Площадка для продажи люксовой и "архивной" одежды.
